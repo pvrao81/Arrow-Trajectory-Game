@@ -2,3294 +2,831 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta
-    name="viewport"
-    content="width=device-width,
-             initial-scale=1,
-             maximum-scale=1,
-             user-scalable=no,
-             viewport-fit=cover"
->
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Trajectory</title>
-
 <style>
-
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-    -webkit-tap-highlight-color: transparent;
-}
-
-html,
-body {
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    background: #000;
-    color: #fff;
-
-    touch-action: none;
-
-    font-family:
-        Arial,
-        Helvetica,
-        sans-serif;
-}
-
-body {
-    overscroll-behavior: none;
-}
-
-#game {
-    position: relative;
-
-    width: 100vw;
-    height: 100dvh;
-
-    overflow: hidden;
-
-    background: #000;
-
-    touch-action: none;
-}
-
-canvas {
-    position: absolute;
-    inset: 0;
-
-    width: 100%;
-    height: 100%;
-
-    touch-action: none;
-}
-
-
-/* =========================================================
-   HUD
-========================================================= */
-
-.hud {
-    position: absolute;
-
-    z-index: 5;
-
-    top: 0;
-    left: 0;
-
-    width: 100%;
-
-    height: 70px;
-
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-
-    padding:
-        env(safe-area-inset-top)
-        20px
-        0
-        20px;
-
-    border-bottom: 1px solid #151515;
-
-    pointer-events: none;
-}
-
-.brand {
-    display: flex;
-    align-items: center;
-
-    gap: 9px;
-}
-
-.brand-dot {
-    width: 7px;
-    height: 7px;
-
-    border-radius: 50%;
-
-    background: #00ff91;
-
-    box-shadow:
-        0 0 14px #00ff91;
-}
-
-.brand-text {
-    font-size: 11px;
-
-    letter-spacing: 4px;
-
-    text-transform: uppercase;
-}
-
-.stats {
-    display: flex;
-
-    gap: 18px;
-}
-
-.stat {
-    text-align: right;
-}
-
-.stat-label {
-    color: #444;
-
-    font-size: 7px;
-
-    letter-spacing: 1.5px;
-
-    margin-bottom: 4px;
-
-    text-transform: uppercase;
-}
-
-.stat-value {
-    font-family: monospace;
-
-    font-size: 13px;
-}
-
-
-/* =========================================================
-   DESKTOP CONTROL PANEL
-========================================================= */
-
-.controls {
-    position: absolute;
-
-    z-index: 10;
-
-    left: 25px;
-    bottom: 25px;
-
-    width: 255px;
-
-    padding: 18px;
-
-    background: rgba(0,0,0,.9);
-
-    border:
-        1px solid
-        #202020;
-}
-
-.title {
-    color: #555;
-
-    font-size: 8px;
-
-    letter-spacing: 2px;
-
-    text-transform: uppercase;
-
-    margin-bottom: 17px;
-}
-
-.row {
-    margin-bottom: 16px;
-}
-
-.row-head {
-    display: flex;
-
-    justify-content: space-between;
-
-    margin-bottom: 7px;
-}
-
-.label {
-    color: #888;
-
-    font-size: 9px;
-
-    letter-spacing: 1px;
-
-    text-transform: uppercase;
-}
-
-.value {
-    font-family: monospace;
-
-    font-size: 11px;
-}
-
-input[type="range"] {
-    width: 100%;
-
-    height: 3px;
-
-    appearance: none;
-
-    background: #282828;
-
-    outline: none;
-}
-
-input[type="range"]::-webkit-slider-thumb {
-    appearance: none;
-
-    width: 13px;
-    height: 13px;
-
-    border-radius: 50%;
-
-    background: #fff;
-}
-
-input[type="range"]::-moz-range-thumb {
-    width: 13px;
-    height: 13px;
-
-    border: 0;
-
-    border-radius: 50%;
-
-    background: #fff;
-}
-
-.fire {
-    width: 100%;
-
-    height: 44px;
-
-    border: 1px solid #555;
-
-    background: #fff;
-
-    color: #000;
-
-    font-size: 9px;
-
-    font-weight: bold;
-
-    letter-spacing: 3px;
-
-    cursor: pointer;
-}
-
-.fire:active {
-    transform: scale(.97);
-}
-
-
-/* =========================================================
-   MOBILE INSTRUCTIONS
-========================================================= */
-
-.mobile-hint {
-    position: absolute;
-
-    z-index: 6;
-
-    left: 50%;
-
-    top: 92px;
-
-    transform: translateX(-50%);
-
-    width: 90%;
-
-    text-align: center;
-
-    color: #444;
-
-    font-family: monospace;
-
-    font-size: 8px;
-
-    letter-spacing: 1px;
-
-    line-height: 1.8;
-
-    pointer-events: none;
-
-    transition:
-        opacity .4s;
-}
-
-.mobile-hint.hidden {
-    opacity: 0;
-}
-
-
-/* =========================================================
-   MESSAGE
-========================================================= */
-
-.message {
-    position: absolute;
-
-    z-index: 20;
-
-    left: 50%;
-    top: 45%;
-
-    transform:
-        translate(-50%,-50%);
-
-    text-align: center;
-
-    pointer-events: none;
-
-    opacity: 0;
-
-    transition:
-        opacity .15s;
-}
-
-.message.show {
-    opacity: 1;
-}
-
-.message-main {
-    font-size: 34px;
-
-    font-weight: 300;
-
-    letter-spacing: 8px;
-}
-
-.message-sub {
-    margin-top: 8px;
-
-    color: #555;
-
-    font-family: monospace;
-
-    font-size: 8px;
-
-    letter-spacing: 2px;
-}
-
-
-/* =========================================================
-   EQUATION
-========================================================= */
-
-.equation {
-    position: absolute;
-
-    right: 25px;
-    bottom: 28px;
-
-    color: #292929;
-
-    font-family: Georgia, serif;
-
-    font-size: 17px;
-
-    font-style: italic;
-
-    pointer-events: none;
-}
-
-
-/* =========================================================
-   MOBILE
-========================================================= */
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: #000; color: #fff; touch-action: none; font-family: Arial, Helvetica, sans-serif; }
+body { overscroll-behavior: none; }
+#game { position: relative; width: 100vw; height: 100dvh; overflow: hidden; background: #000; touch-action: none; }
+canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
+
+/* HUD */
+.hud { position: absolute; z-index: 5; top: 0; left: 0; width: 100%; height: 70px; display: flex; align-items: center; justify-content: space-between; padding: env(safe-area-inset-top) 20px 0 20px; border-bottom: 1px solid #151515; pointer-events: none; }
+.brand { display: flex; align-items: center; gap: 9px; }
+.brand-dot { width: 7px; height: 7px; border-radius: 50%; background: #00ff91; box-shadow: 0 0 14px #00ff91; }
+.brand-text { font-size: 11px; letter-spacing: 4px; text-transform: uppercase; }
+.stats { display: flex; gap: 18px; }
+.stat { text-align: right; }
+.stat-label { color: #444; font-size: 7px; letter-spacing: 1.5px; margin-bottom: 4px; text-transform: uppercase; }
+.stat-value { font-family: monospace; font-size: 13px; }
+
+/* Desktop control panel */
+.controls { position: absolute; z-index: 10; left: 25px; bottom: 25px; width: 255px; padding: 18px; background: rgba(0,0,0,.9); border: 1px solid #202020; }
+.title { color: #555; font-size: 8px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 17px; }
+.row { margin-bottom: 16px; }
+.row-head { display: flex; justify-content: space-between; margin-bottom: 7px; }
+.label { color: #888; font-size: 9px; letter-spacing: 1px; text-transform: uppercase; }
+.value { font-family: monospace; font-size: 11px; }
+input[type="range"] { width: 100%; height: 3px; appearance: none; background: #282828; outline: none; }
+input[type="range"]::-webkit-slider-thumb { appearance: none; width: 13px; height: 13px; border-radius: 50%; background: #fff; }
+input[type="range"]::-moz-range-thumb { width: 13px; height: 13px; border: 0; border-radius: 50%; background: #fff; }
+.fire { width: 100%; height: 44px; border: 1px solid #555; background: #fff; color: #000; font-size: 9px; font-weight: bold; letter-spacing: 3px; cursor: pointer; }
+.fire:active { transform: scale(.97); }
+
+/* Mobile instructions */
+.mobile-hint { position: absolute; z-index: 6; left: 50%; top: 92px; transform: translateX(-50%); width: 90%; text-align: center; color: #444; font-family: monospace; font-size: 8px; letter-spacing: 1px; line-height: 1.8; pointer-events: none; transition: opacity .4s; }
+.mobile-hint.hidden { opacity: 0; }
+
+/* Message */
+.message { position: absolute; z-index: 20; left: 50%; top: 45%; transform: translate(-50%,-50%); text-align: center; pointer-events: none; opacity: 0; transition: opacity .15s; }
+.message.show { opacity: 1; }
+.message-main { font-size: 34px; font-weight: 300; letter-spacing: 8px; }
+.message-sub { margin-top: 8px; color: #555; font-family: monospace; font-size: 8px; letter-spacing: 2px; }
+
+/* Equation */
+.equation { position: absolute; right: 25px; bottom: 28px; color: #292929; font-family: Georgia, serif; font-size: 17px; font-style: italic; pointer-events: none; }
 
 @media (max-width: 700px) {
-
-    .hud {
-        height: 62px;
-
-        padding-left: 15px;
-        padding-right: 15px;
-    }
-
-    .brand-text {
-        font-size: 9px;
-
-        letter-spacing: 3px;
-    }
-
-    .stats {
-        gap: 10px;
-    }
-
-    .stat-label {
-        font-size: 6px;
-    }
-
-    .stat-value {
-        font-size: 11px;
-    }
-
-    .controls {
-        display: none;
-    }
-
-    .equation {
-        display: none;
-    }
-
-    .mobile-hint {
-        display: block;
-    }
-
+    .hud { height: 62px; padding-left: 15px; padding-right: 15px; }
+    .brand-text { font-size: 9px; letter-spacing: 3px; }
+    .stats { gap: 10px; }
+    .stat-label { font-size: 6px; }
+    .stat-value { font-size: 11px; }
+    .controls, .equation { display: none; }
+    .mobile-hint { display: block; }
 }
-
-
-/* =========================================================
-   DESKTOP
-========================================================= */
-
 @media (min-width: 701px) {
-
-    .mobile-hint {
-        display: none;
-    }
-
+    .mobile-hint { display: none; }
 }
-
 </style>
 </head>
-
 <body>
-
 <div id="game">
+    <canvas id="canvas"></canvas>
 
-<canvas id="canvas"></canvas>
-
-
-<!-- ======================================================
-     HUD
-====================================================== -->
-
-<div class="hud">
-
-    <div class="brand">
-
-        <div class="brand-dot"></div>
-
-        <div class="brand-text">
-            Trajectory
+    <div class="hud">
+        <div class="brand">
+            <div class="brand-dot"></div>
+            <div class="brand-text">Trajectory</div>
         </div>
-
+        <div class="stats">
+            <div class="stat"><div class="stat-label">Score</div><div class="stat-value" id="score">0000</div></div>
+            <div class="stat"><div class="stat-label">Streak</div><div class="stat-value" id="streak">00</div></div>
+            <div class="stat"><div class="stat-label">Accuracy</div><div class="stat-value" id="accuracy">100%</div></div>
+        </div>
     </div>
 
-
-    <div class="stats">
-
-        <div class="stat">
-
-            <div class="stat-label">
-                Score
-            </div>
-
-            <div
-                class="stat-value"
-                id="score"
-            >
-                0000
-            </div>
-
-        </div>
-
-
-        <div class="stat">
-
-            <div class="stat-label">
-                Streak
-            </div>
-
-            <div
-                class="stat-value"
-                id="streak"
-            >
-                00
-            </div>
-
-        </div>
-
-
-        <div class="stat">
-
-            <div class="stat-label">
-                Accuracy
-            </div>
-
-            <div
-                class="stat-value"
-                id="accuracy"
-            >
-                100%
-            </div>
-
-        </div>
-
+    <!-- CHANGED: hint now describes the slingshot-style pull -->
+    <div class="mobile-hint" id="mobileHint">
+        TOUCH THE BOW AND PULL BACK<br>
+        PULL FURTHER FOR MORE POWER · ARROW FLIES OPPOSITE YOUR PULL<br>
+        RELEASE TO FIRE
     </div>
 
+    <div class="controls">
+        <div class="title">Projectile Parameters</div>
+        <div class="row">
+            <div class="row-head"><span class="label">Angle θ</span><span class="value" id="angleValue">45.0°</span></div>
+            <input id="angle" type="range" min="8" max="82" step=".1" value="45">
+        </div>
+        <div class="row">
+            <div class="row-head"><span class="label">Velocity</span><span class="value" id="velocityValue">850</span></div>
+            <input id="velocity" type="range" min="350" max="1800" step="10" value="850">
+        </div>
+        <button class="fire" id="fire">FIRE ARROW</button>
+    </div>
+
+    <div class="message" id="message">
+        <div class="message-main" id="messageMain">HIT</div>
+        <div class="message-sub" id="messageSub">trajectory confirmed</div>
+    </div>
 </div>
-
-
-<!-- ======================================================
-     MOBILE HELP
-====================================================== -->
-
-<div
-    class="mobile-hint"
-    id="mobileHint"
->
-    DRAG FROM THE BOW<br>
-    MOVE OUTWARD TO INCREASE POWER · AIM WITH DIRECTION<br>
-    RELEASE TO FIRE
-</div>
-
-
-<!-- ======================================================
-     DESKTOP CONTROLS
-====================================================== -->
-
-<div class="controls">
-
-    <div class="title">
-        Projectile Parameters
-    </div>
-
-
-    <div class="row">
-
-        <div class="row-head">
-
-            <span class="label">
-                Angle θ
-            </span>
-
-            <span
-                class="value"
-                id="angleValue"
-            >
-                45.0°
-            </span>
-
-        </div>
-
-
-        <input
-            id="angle"
-            type="range"
-            min="8"
-            max="82"
-            step=".1"
-            value="45"
-        >
-
-    </div>
-
-
-    <div class="row">
-
-        <div class="row-head">
-
-            <span class="label">
-                Velocity
-            </span>
-
-            <span
-                class="value"
-                id="velocityValue"
-            >
-                850
-            </span>
-
-        </div>
-
-
-        <input
-            id="velocity"
-            type="range"
-            min="350"
-            max="1800"
-            step="10"
-            value="850"
-        >
-
-    </div>
-
-
-    <button
-        class="fire"
-        id="fire"
-    >
-        FIRE ARROW
-    </button>
-
-</div>
-
-
-<!-- ======================================================
-     RESULT
-====================================================== -->
-
-<div
-    class="message"
-    id="message"
->
-
-    <div
-        class="message-main"
-        id="messageMain"
-    >
-        HIT
-    </div>
-
-    <div
-        class="message-sub"
-        id="messageSub"
-    >
-        trajectory confirmed
-    </div>
-
-</div>
-
-</div>
-
 
 <script>
-
 /* =========================================================
    CANVAS
 ========================================================= */
-
-const canvas =
-    document.getElementById("canvas");
-
-const ctx =
-    canvas.getContext("2d");
-
-
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
 let W = innerWidth;
 let H = innerHeight;
-
 
 /* =========================================================
    PHYSICS
 ========================================================= */
-
 const GRAVITY = 430;
-
 const MIN_VELOCITY = 350;
 const MAX_VELOCITY = 1800;
+const MIN_ANGLE = 8;
+const MAX_ANGLE = 82;
 
-const launcher = {
-    x: 110,
-    y: 0
-};
-
-const target = {
-    x: 0,
-    y: 0,
-    radius: 10
-};
-
+const launcher = { x: 110, y: 0 };
+const target = { x: 0, y: 0, radius: 10 };
 
 /* =========================================================
    GAME STATE
 ========================================================= */
-
 let arrow = null;
-
-let score = 0;
-let streak = 0;
-let shots = 0;
-let hits = 0;
-
+let score = 0, streak = 0, shots = 0, hits = 0;
 let particles = [];
-
 let targetFlash = 0;
-
 let locked = false;
-
-let lastTime =
-    performance.now();
-
+let lastTime = performance.now();
 
 /* =========================================================
    MOBILE DRAG STATE
 ========================================================= */
-
 let touching = false;
-
-let touchStartX = 0;
-let touchStartY = 0;
-
 let currentTouchX = 0;
 let currentTouchY = 0;
 
+/*
+    CHANGED: the aiming radius and the full-power draw distance
+    are now the same value. Reaching the edge of the circle
+    gives exactly 100% power, so every target is reachable.
+*/
+const AIM_ACTIVE_RADIUS = 135;
+const MAX_DRAW_DISTANCE = AIM_ACTIVE_RADIUS;
 
 /*
-    ========================================================
-    AIMING RADIUS
-    ========================================================
-
-    This is the important anti-cheat mechanic.
-
-    The touchpoint can control the bow only while it is
-    inside this radius around the launcher.
-
-    Increase this value for easier aiming.
-    Decrease it for harder aiming.
+    NEW: tiny pulls right on top of the bow give a jittery
+    direction, so the angle is held steady inside this zone.
 */
-
-const AIM_ACTIVE_RADIUS = 125;
-
-
-/*
-    Maximum draw distance used for power calculation.
-*/
-
-const MAX_DRAW_DISTANCE = 190;
-
-
-/*
-    Current validity of the touch position.
-*/
+const AIM_DEAD_ZONE = 14;
 
 let aimActive = false;
-
-
-/*
-    Last VALID angle and velocity.
-
-    When the pointer moves outside the active radius,
-    these values are frozen.
-*/
-
 let lastValidAngle = 45;
-
-let lastValidVelocity =
-    850;
-
+let lastValidVelocity = 850;
 
 /* =========================================================
    RESIZE
 ========================================================= */
-
 function resize() {
-
     W = innerWidth;
     H = innerHeight;
 
-    const dpr =
-        Math.min(
-            devicePixelRatio || 1,
-            2
-        );
-
-    canvas.width =
-        W * dpr;
-
-    canvas.height =
-        H * dpr;
-
-    canvas.style.width =
-        W + "px";
-
-    canvas.style.height =
-        H + "px";
-
-    ctx.setTransform(
-        dpr,
-        0,
-        0,
-        dpr,
-        0,
-        0
-    );
-
+    const dpr = Math.min(devicePixelRatio || 1, 2);
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    canvas.style.width = W + "px";
+    canvas.style.height = H + "px";
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     if (W < 700) {
-
-        launcher.x =
-            Math.max(
-                85,
-                W * .20
-            );
-
-        launcher.y =
-            H - 125;
-
+        /*
+            CHANGED: pulling back means the finger moves left
+            and down from the bow. The bow now sits far enough
+            from the left and bottom edges for a full-power pull.
+        */
+        launcher.x = Math.max(AIM_ACTIVE_RADIUS + 15, W * .22);
+        launcher.y = H - (AIM_ACTIVE_RADIUS + 15);
     } else {
-
         launcher.x = 110;
-
-        launcher.y =
-            H - 145;
+        launcher.y = H - 145;
     }
-
 
     placeTarget();
 }
-
-window.addEventListener(
-    "resize",
-    resize
-);
-
+window.addEventListener("resize", resize);
 
 /* =========================================================
    TARGET
 ========================================================= */
-
 function placeTarget() {
-
     let minX;
-
     if (W < 700) {
-
-        minX =
-            Math.max(
-                W * .52,
-                210
-            );
-
+        // CHANGED: keep targets clear of the relocated bow
+        minX = Math.max(W * .52, launcher.x + 90);
     } else {
-
-        minX =
-            Math.max(
-                350,
-                W * .38
-            );
+        minX = Math.max(350, W * .38);
     }
+    const maxX = Math.max(minX + 20, W - 45);
 
-
-    const maxX =
-        Math.max(
-            minX + 20,
-            W - 45
-        );
-
-
-    target.x =
-        minX +
-        Math.random() *
-        (maxX - minX);
-
-
-    target.y =
-        105 +
-        Math.random() *
-        Math.max(
-            35,
-            H - 265
-        );
-
-
-    target.radius =
-        W < 700
-            ? 11
-            : 9;
+    target.x = minX + Math.random() * (maxX - minX);
+    target.y = 105 + Math.random() * Math.max(35, H - 265);
+    target.radius = W < 700 ? 11 : 9;
 }
-
 
 /* =========================================================
    DESKTOP CONTROLS
 ========================================================= */
-
-const angleSlider =
-    document.getElementById("angle");
-
-const velocitySlider =
-    document.getElementById("velocity");
-
-const angleValue =
-    document.getElementById("angleValue");
-
-const velocityValue =
-    document.getElementById("velocityValue");
-
+const angleSlider = document.getElementById("angle");
+const velocitySlider = document.getElementById("velocity");
+const angleValue = document.getElementById("angleValue");
+const velocityValue = document.getElementById("velocityValue");
 
 function updateControls() {
-
-    angleValue.textContent =
-        Number(angleSlider.value)
-            .toFixed(1) + "°";
-
-    velocityValue.textContent =
-        Number(velocitySlider.value)
-            .toFixed(0);
+    const theta = touching ? lastValidAngle : Number(angleSlider.value);
+    const v = touching ? lastValidVelocity : Number(velocitySlider.value);
+    angleValue.textContent = theta.toFixed(1) + "°";
+    velocityValue.textContent = v.toFixed(0);
 }
+angleSlider.addEventListener("input", updateControls);
+velocitySlider.addEventListener("input", updateControls);
 
-
-angleSlider.addEventListener(
-    "input",
-    updateControls
-);
-
-velocitySlider.addEventListener(
-    "input",
-    updateControls
-);
-
+/* Current aim, from touch (exact values) or sliders. */
+function currentAngle() {
+    return touching ? lastValidAngle : Number(angleSlider.value);
+}
+function currentVelocity() {
+    return touching ? lastValidVelocity : Number(velocitySlider.value);
+}
 
 /* =========================================================
    MATHEMATICS
 ========================================================= */
-
-function projectile(
-    t,
-    theta,
-    velocity
-) {
-
-    const radians =
-        theta *
-        Math.PI /
-        180;
-
-
-    const vx =
-        velocity *
-        Math.cos(radians);
-
-    const vy =
-        velocity *
-        Math.sin(radians);
-
-
+function projectile(t, theta, velocity) {
+    const radians = theta * Math.PI / 180;
+    const vx = velocity * Math.cos(radians);
+    const vy = velocity * Math.sin(radians);
     return {
-
-        x:
-            launcher.x +
-            vx * t,
-
-        y:
-            launcher.y -
-            vy * t +
-            .5 *
-            GRAVITY *
-            t *
-            t
+        x: launcher.x + vx * t,
+        y: launcher.y - vy * t + .5 * GRAVITY * t * t
     };
 }
 
+function smoothstep(n) {
+    return n * n * (3 - 2 * n);
+}
 
 /* =========================================================
    MOBILE AIMING
 ========================================================= */
-
 function updateMobileAim(x, y) {
+    const dx = x - launcher.x;
+    const dy = y - launcher.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
 
-    const dx =
-        x - launcher.x;
-
-    const dy =
-        y - launcher.y;
-
-
-    const distance =
-        Math.sqrt(
-            dx * dx +
-            dy * dy
-        );
-
-
-    /*
-        =====================================================
-        HARD AIMING BOUNDARY
-        =====================================================
-
-        Once outside this radius the pointer no longer
-        controls the arrow.
-    */
-
-    if (
-        distance >
-        AIM_ACTIVE_RADIUS
-    ) {
-
+    if (distance > AIM_ACTIVE_RADIUS) {
         aimActive = false;
-
         return;
     }
-
-
     aimActive = true;
 
-
     /*
-        Direction controls angle.
+        CHANGED: slingshot aiming.
+        The arrow flies OPPOSITE to the pull. We measure the
+        vector from the finger back to the bow, so pulling
+        down-left aims up-right.
     */
+    if (distance >= AIM_DEAD_ZONE) {
+        let theta = Math.atan2(y - launcher.y, launcher.x - x) * 180 / Math.PI;
+        theta = Math.max(MIN_ANGLE, Math.min(MAX_ANGLE, theta));
+        lastValidAngle = theta;
+    }
 
-    let theta =
-        Math.atan2(
-            launcher.y - y,
-            dx
-        ) *
-        180 /
-        Math.PI;
+    const normalized = Math.max(0, Math.min(1, distance / MAX_DRAW_DISTANCE));
+    lastValidVelocity = MIN_VELOCITY + smoothstep(normalized) * (MAX_VELOCITY - MIN_VELOCITY);
 
-
-    /*
-        Only aim forward and upward.
-    */
-
-    theta =
-        Math.max(
-            8,
-            Math.min(
-                82,
-                theta
-            )
-        );
-
-
-    /*
-        Distance controls power.
-    */
-
-    const normalized =
-        Math.max(
-            0,
-            Math.min(
-                1,
-                distance /
-                MAX_DRAW_DISTANCE
-            )
-        );
-
-
-    /*
-        Smoothstep easing.
-    */
-
-    const eased =
-        normalized *
-        normalized *
-        (3 - 2 * normalized);
-
-
-    const velocity =
-        MIN_VELOCITY +
-        eased *
-        (
-            MAX_VELOCITY -
-            MIN_VELOCITY
-        );
-
-
-    /*
-        Store ONLY valid values.
-
-        These remain frozen if the pointer leaves
-        the aiming radius.
-    */
-
-    lastValidAngle =
-        theta;
-
-    lastValidVelocity =
-        velocity;
-
-
-    angleSlider.value =
-        theta;
-
-    velocitySlider.value =
-        velocity;
-
-
+    angleSlider.value = lastValidAngle;
+    velocitySlider.value = lastValidVelocity;
     updateControls();
 }
-
 
 /* =========================================================
    TOUCH START
 ========================================================= */
+canvas.addEventListener("pointerdown", e => {
+    if (e.pointerType !== "touch" && e.pointerType !== "pen") return;
+    e.preventDefault();
+    if (arrow || locked) return;
 
-canvas.addEventListener(
-    "pointerdown",
-    e => {
+    const dx = e.clientX - launcher.x;
+    const dy = e.clientY - launcher.y;
+    if (Math.sqrt(dx * dx + dy * dy) > AIM_ACTIVE_RADIUS) return;
 
-        if (
-            e.pointerType !== "touch" &&
-            e.pointerType !== "pen"
-        ) {
+    touching = true;
+    aimActive = true;
+    currentTouchX = e.clientX;
+    currentTouchY = e.clientY;
 
-            return;
-        }
-
-
-        e.preventDefault();
-
-
-        if (
-            arrow ||
-            locked
-        ) {
-
-            return;
-        }
-
-
-        const dx =
-            e.clientX -
-            launcher.x;
-
-        const dy =
-            e.clientY -
-            launcher.y;
-
-
-        const distance =
-            Math.sqrt(
-                dx * dx +
-                dy * dy
-            );
-
-
-        /*
-            Player must begin within the active radius.
-        */
-
-        if (
-            distance >
-            AIM_ACTIVE_RADIUS
-        ) {
-
-            return;
-        }
-
-
-        touching = true;
-
-        aimActive = true;
-
-
-        touchStartX =
-            e.clientX;
-
-        touchStartY =
-            e.clientY;
-
-        currentTouchX =
-            e.clientX;
-
-        currentTouchY =
-            e.clientY;
-
-
-        canvas.setPointerCapture(
-            e.pointerId
-        );
-
-
-        updateMobileAim(
-            e.clientX,
-            e.clientY
-        );
-
-
-        document
-            .getElementById(
-                "mobileHint"
-            )
-            .classList.add(
-                "hidden"
-            );
-
-    },
-    {
-        passive: false
-    }
-);
-
+    canvas.setPointerCapture(e.pointerId);
+    updateMobileAim(e.clientX, e.clientY);
+    document.getElementById("mobileHint").classList.add("hidden");
+}, { passive: false });
 
 /* =========================================================
    TOUCH MOVE
 ========================================================= */
-
-canvas.addEventListener(
-    "pointermove",
-    e => {
-
-        if (!touching) {
-            return;
-        }
-
-
-        e.preventDefault();
-
-
-        currentTouchX =
-            e.clientX;
-
-        currentTouchY =
-            e.clientY;
-
-
-        updateMobileAim(
-            currentTouchX,
-            currentTouchY
-        );
-
-    },
-    {
-        passive: false
-    }
-);
-
+canvas.addEventListener("pointermove", e => {
+    if (!touching) return;
+    e.preventDefault();
+    currentTouchX = e.clientX;
+    currentTouchY = e.clientY;
+    updateMobileAim(currentTouchX, currentTouchY);
+}, { passive: false });
 
 /* =========================================================
    TOUCH RELEASE
 ========================================================= */
+canvas.addEventListener("pointerup", e => {
+    if (!touching) return;
+    e.preventDefault();
 
-canvas.addEventListener(
-    "pointerup",
-    e => {
-
-        if (!touching) {
-            return;
-        }
-
-
-        e.preventDefault();
-
-
+    if (!aimActive) {
         touching = false;
-
-
-        /*
-            IMPORTANT:
-
-            Releasing outside the active radius does NOT
-            fire the arrow.
-        */
-
-        if (!aimActive) {
-
-            angleSlider.value =
-                lastValidAngle;
-
-            velocitySlider.value =
-                lastValidVelocity;
-
-            updateControls();
-
-
-            showMessage(
-                "OUT OF RANGE",
-                "return inside aiming radius"
-            );
-
-
-            setTimeout(
-                hideMessage,
-                350
-            );
-
-
-            aimActive = false;
-
-            return;
-        }
-
-
-        /*
-            Valid release.
-        */
-
-        shoot();
-
-
-        aimActive = false;
-
-    },
-    {
-        passive: false
+        angleSlider.value = lastValidAngle;
+        velocitySlider.value = lastValidVelocity;
+        updateControls();
+        showMessage("OUT OF RANGE", "return inside aiming radius");
+        setTimeout(hideMessage, 350);
+        return;
     }
-);
 
+    /*
+        CHANGED: fire BEFORE clearing `touching`, so the shot
+        uses the exact last valid values instead of the
+        slider's rounded ones.
+    */
+    shoot();
+    touching = false;
+    aimActive = false;
+    updateControls();
+}, { passive: false });
 
-/* =========================================================
-   TOUCH CANCEL
-========================================================= */
-
-canvas.addEventListener(
-    "pointercancel",
-    () => {
-
-        touching = false;
-
-        aimActive = false;
-
-    }
-);
-
+canvas.addEventListener("pointercancel", () => {
+    touching = false;
+    aimActive = false;
+});
 
 /* =========================================================
    DRAW PREDICTION
 ========================================================= */
-
 function drawPrediction() {
+    if (arrow) return;
 
-    if (arrow) {
-        return;
-    }
-
-
-    const theta =
-        Number(angleSlider.value);
-
-    const velocity =
-        Number(velocitySlider.value);
-
+    const theta = currentAngle();
+    const velocity = currentVelocity();
 
     ctx.save();
-
     ctx.beginPath();
-
     let started = false;
 
-
-    for (
-        let t = 0;
-        t < 5;
-        t += .025
-    ) {
-
-        const p =
-            projectile(
-                t,
-                theta,
-                velocity
-            );
-
-
-        if (
-            p.x > W + 30 ||
-            p.y > H + 30 ||
-            p.y < 70
-        ) {
-
-            break;
-        }
-
-
-        if (!started) {
-
-            ctx.moveTo(
-                p.x,
-                p.y
-            );
-
-            started = true;
-
-        } else {
-
-            ctx.lineTo(
-                p.x,
-                p.y
-            );
-        }
+    for (let t = 0; t < 5; t += .025) {
+        const p = projectile(t, theta, velocity);
+        if (p.x > W + 30 || p.y > H + 30 || p.y < 70) break;
+        if (!started) { ctx.moveTo(p.x, p.y); started = true; }
+        else ctx.lineTo(p.x, p.y);
     }
 
-
-    ctx.setLineDash([
-        2,
-        7
-    ]);
-
-    /*
-        Prediction becomes dim when the touch is
-        outside the valid aiming radius.
-    */
-
-    if (touching && !aimActive) {
-
-        ctx.strokeStyle =
-            "rgba(255,49,88,.15)";
-
-    } else {
-
-        ctx.strokeStyle =
-            touching
-                ? "rgba(0,255,145,.38)"
-                : "rgba(255,255,255,.18)";
-    }
-
-
+    ctx.setLineDash([2, 7]);
+    if (touching && !aimActive) ctx.strokeStyle = "rgba(255,49,88,.15)";
+    else ctx.strokeStyle = touching ? "rgba(0,255,145,.38)" : "rgba(255,255,255,.18)";
     ctx.lineWidth = 1;
-
     ctx.stroke();
-
     ctx.restore();
 }
-
 
 /* =========================================================
    BOW
 ========================================================= */
-
 function drawBow() {
+    if (arrow) return;
 
-    if (arrow) {
-        return;
-    }
+    const out = touching && !aimActive;
+    const theta = currentAngle() * Math.PI / 180;
+    const velocity = currentVelocity();
+    const tension = Math.max(0, Math.min(1, (velocity - MIN_VELOCITY) / (MAX_VELOCITY - MIN_VELOCITY)));
+    const eased = smoothstep(tension);
 
+    const dx = Math.cos(theta);
+    const dy = -Math.sin(theta);
+    const px = -dy;
+    const py = dx;
 
-    /*
-        While touching, always use the LAST VALID
-        angle rather than directly trusting the cursor.
-    */
+    const bowLength = 75;
+    const curve = 22 + eased * 14;
 
-    const theta =
-        (
-            touching
-                ? lastValidAngle
-                : Number(angleSlider.value)
-        ) *
-        Math.PI /
-        180;
-
-
-    const velocity =
-        touching
-            ? lastValidVelocity
-            : Number(velocitySlider.value);
-
-
-    const tension =
-        Math.max(
-            0,
-            Math.min(
-                1,
-                (
-                    velocity -
-                    MIN_VELOCITY
-                ) /
-                (
-                    MAX_VELOCITY -
-                    MIN_VELOCITY
-                )
-            )
-        );
-
-
-    const eased =
-        tension *
-        tension *
-        (3 - 2 * tension);
-
+    const top = { x: launcher.x + px * bowLength, y: launcher.y + py * bowLength };
+    const bottom = { x: launcher.x - px * bowLength, y: launcher.y - py * bowLength };
 
     /*
-        Arrow direction.
+        CHANGED: string pull always follows the power value,
+        so the visual matches the shot on mobile and desktop.
     */
+    const pull = 4 + eased * 42;
 
-    const dx =
-        Math.cos(theta);
-
-    const dy =
-        -Math.sin(theta);
-
-
-    /*
-        Perpendicular.
-    */
-
-    const px =
-        -dy;
-
-    const py =
-        dx;
-
-
-    /*
-        Bow geometry.
-    */
-
-    const bowLength =
-        75;
-
-
-    const curve =
-        22 +
-        eased * 14;
-
-
-    const top = {
-
-        x:
-            launcher.x +
-            px * bowLength,
-
-        y:
-            launcher.y +
-            py * bowLength
-    };
-
-
-    const bottom = {
-
-        x:
-            launcher.x -
-            px * bowLength,
-
-        y:
-            launcher.y -
-            py * bowLength
-    };
-
-
-    /*
-        String draw.
-    */
-
-    let pull;
-
-
-    if (
-        touching &&
-        aimActive
-    ) {
-
-        const distance =
-            Math.sqrt(
-                Math.pow(
-                    currentTouchX -
-                    launcher.x,
-                    2
-                ) +
-                Math.pow(
-                    currentTouchY -
-                    launcher.y,
-                    2
-                )
-            );
-
-
-        pull =
-            Math.min(
-                AIM_ACTIVE_RADIUS,
-                distance
-            );
-
-
-        pull =
-            4 +
-            pull *
-            .22;
-
-    } else if (
-        touching &&
-        !aimActive
-    ) {
-
-        /*
-            Outside radius:
-
-            Freeze the visual bow at the last valid
-            tension rather than allowing the pointer
-            to manipulate it.
-        */
-
-        const validNormalized =
-            Math.max(
-                0,
-                Math.min(
-                    1,
-                    (
-                        lastValidVelocity -
-                        MIN_VELOCITY
-                    ) /
-                    (
-                        MAX_VELOCITY -
-                        MIN_VELOCITY
-                    )
-                )
-            );
-
-
-        const validEased =
-            validNormalized *
-            validNormalized *
-            (
-                3 -
-                2 * validNormalized
-            );
-
-
-        pull =
-            4 +
-            validEased *
-            42;
-
-    } else {
-
-        pull =
-            4 +
-            eased * 42;
-    }
-
-
-    /*
-        Nocking point.
-    */
-
-    const stringPoint = {
-
-        x:
-            launcher.x -
-            dx * pull,
-
-        y:
-            launcher.y -
-            dy * pull
-    };
-
-
-    /*
-        Bow center.
-    */
-
+    const stringPoint = { x: launcher.x - dx * pull, y: launcher.y - dy * pull };
     const bowCenter = {
-
-        x:
-            launcher.x +
-            dx *
-            (
-                curve +
-                eased * 7
-            ),
-
-        y:
-            launcher.y +
-            dy *
-            (
-                curve +
-                eased * 7
-            )
+        x: launcher.x + dx * (curve + eased * 7),
+        y: launcher.y + dy * (curve + eased * 7)
     };
-
 
     ctx.save();
 
-
-    /*
-        =====================================================
-        OUT OF RANGE INDICATOR
-        =====================================================
-    */
-
-    if (
-        touching &&
-        !aimActive
-    ) {
-
-        ctx.shadowColor =
-            "#ff3158";
-
-        ctx.shadowBlur = 12;
-    } else {
-
-        ctx.shadowColor =
-            `rgba(
-                255,
-                255,
-                255,
-                ${.12 + eased * .25}
-            )`;
-
-        ctx.shadowBlur =
-            5 +
-            eased * 9;
-    }
-
-
-    /*
-        =====================================================
-        BOW
-        =====================================================
-    */
+    // Bow
+    if (out) { ctx.shadowColor = "#ff3158"; ctx.shadowBlur = 12; }
+    else { ctx.shadowColor = `rgba(255,255,255,${.12 + eased * .25})`; ctx.shadowBlur = 5 + eased * 9; }
 
     ctx.beginPath();
-
-    ctx.moveTo(
-        top.x,
-        top.y
-    );
-
-    ctx.quadraticCurveTo(
-        bowCenter.x,
-        bowCenter.y,
-        bottom.x,
-        bottom.y
-    );
-
-
-    if (
-        touching &&
-        !aimActive
-    ) {
-
-        ctx.strokeStyle =
-            "#ff3158";
-
-    } else {
-
-        ctx.strokeStyle =
-            "#eeeeee";
-    }
-
-
-    ctx.lineWidth =
-        3 +
-        eased * 1.5;
-
-    ctx.lineCap =
-        "round";
-
+    ctx.moveTo(top.x, top.y);
+    ctx.quadraticCurveTo(bowCenter.x, bowCenter.y, bottom.x, bottom.y);
+    ctx.strokeStyle = out ? "#ff3158" : "#eeeeee";
+    ctx.lineWidth = 3 + eased * 1.5;
+    ctx.lineCap = "round";
     ctx.stroke();
-
     ctx.shadowBlur = 0;
 
+    // Bow tips
+    ctx.fillStyle = "#fff";
+    ctx.beginPath(); ctx.arc(top.x, top.y, 3, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(bottom.x, bottom.y, 3, 0, Math.PI * 2); ctx.fill();
 
-    /*
-        Bow tips.
-    */
-
-    ctx.fillStyle =
-        "#fff";
-
-
+    // String
+    const brightness = Math.round(110 + eased * 145);
     ctx.beginPath();
-
-    ctx.arc(
-        top.x,
-        top.y,
-        3,
-        0,
-        Math.PI * 2
-    );
-
-    ctx.fill();
-
-
-    ctx.beginPath();
-
-    ctx.arc(
-        bottom.x,
-        bottom.y,
-        3,
-        0,
-        Math.PI * 2
-    );
-
-    ctx.fill();
-
-
-    /*
-        =====================================================
-        STRING
-        =====================================================
-    */
-
-    ctx.beginPath();
-
-    ctx.moveTo(
-        top.x,
-        top.y
-    );
-
-    ctx.lineTo(
-        stringPoint.x,
-        stringPoint.y
-    );
-
-    ctx.lineTo(
-        bottom.x,
-        bottom.y
-    );
-
-
-    const brightness =
-        Math.round(
-            110 +
-            eased * 145
-        );
-
-
-    ctx.strokeStyle =
-        touching && !aimActive
-            ? "#ff3158"
-            : `rgb(
-                ${brightness},
-                ${brightness},
-                ${brightness}
-            )`;
-
-
-    ctx.lineWidth =
-        1 +
-        eased * .9;
-
+    ctx.moveTo(top.x, top.y);
+    ctx.lineTo(stringPoint.x, stringPoint.y);
+    ctx.lineTo(bottom.x, bottom.y);
+    ctx.strokeStyle = out ? "#ff3158" : `rgb(${brightness},${brightness},${brightness})`;
+    ctx.lineWidth = 1 + eased * .9;
     ctx.stroke();
 
-
-    /*
-        =====================================================
-        TENSION GLOW
-        =====================================================
-    */
-
-    ctx.shadowColor =
-        touching && !aimActive
-            ? "#ff3158"
-            : "#00ff91";
-
-
-    ctx.shadowBlur =
-        eased * 18;
-
-
-    ctx.fillStyle =
-        touching && !aimActive
-            ? "#ff3158"
-            : eased > .7
-                ? "#00ff91"
-                : "#fff";
-
-
+    // Tension glow
+    ctx.shadowColor = out ? "#ff3158" : "#00ff91";
+    ctx.shadowBlur = eased * 18;
+    ctx.fillStyle = out ? "#ff3158" : eased > .7 ? "#00ff91" : "#fff";
     ctx.beginPath();
-
-    ctx.arc(
-        stringPoint.x,
-        stringPoint.y,
-        2.5 +
-        eased * 1.5,
-        0,
-        Math.PI * 2
-    );
-
+    ctx.arc(stringPoint.x, stringPoint.y, 2.5 + eased * 1.5, 0, Math.PI * 2);
     ctx.fill();
-
     ctx.shadowBlur = 0;
 
-
-    /*
-        =====================================================
-        LOADED ARROW
-        =====================================================
-    */
-
+    // Loaded arrow
     const arrowLength = 73;
+    const rearX = stringPoint.x - dx * 5;
+    const rearY = stringPoint.y - dy * 5;
+    const tipX = stringPoint.x + dx * arrowLength;
+    const tipY = stringPoint.y + dy * arrowLength;
 
+    ctx.strokeStyle = out ? "#ff3158" : "#fff";
+    ctx.lineWidth = 2.3;
+    ctx.beginPath(); ctx.moveTo(rearX, rearY); ctx.lineTo(tipX, tipY); ctx.stroke();
 
-    const rearX =
-        stringPoint.x -
-        dx * 5;
-
-    const rearY =
-        stringPoint.y -
-        dy * 5;
-
-
-    const tipX =
-        stringPoint.x +
-        dx * arrowLength;
-
-    const tipY =
-        stringPoint.y +
-        dy * arrowLength;
-
-
-    ctx.strokeStyle =
-        touching && !aimActive
-            ? "#ff3158"
-            : "#fff";
-
-
-    ctx.lineWidth =
-        2.3;
-
-
+    const headLength = 11, headWidth = 5;
+    ctx.fillStyle = out ? "#ff3158" : "#fff";
     ctx.beginPath();
-
-    ctx.moveTo(
-        rearX,
-        rearY
-    );
-
-    ctx.lineTo(
-        tipX,
-        tipY
-    );
-
-    ctx.stroke();
-
-
-    /*
-        Arrow head.
-    */
-
-    const headLength = 11;
-    const headWidth = 5;
-
-
-    ctx.fillStyle =
-        touching && !aimActive
-            ? "#ff3158"
-            : "#fff";
-
-
-    ctx.beginPath();
-
-    ctx.moveTo(
-        tipX,
-        tipY
-    );
-
-    ctx.lineTo(
-        tipX -
-        dx * headLength +
-        px * headWidth,
-
-        tipY -
-        dy * headLength +
-        py * headWidth
-    );
-
-    ctx.lineTo(
-        tipX -
-        dx * headLength -
-        px * headWidth,
-
-        tipY -
-        dy * headLength -
-        py * headWidth
-    );
-
+    ctx.moveTo(tipX, tipY);
+    ctx.lineTo(tipX - dx * headLength + px * headWidth, tipY - dy * headLength + py * headWidth);
+    ctx.lineTo(tipX - dx * headLength - px * headWidth, tipY - dy * headLength - py * headWidth);
     ctx.closePath();
-
     ctx.fill();
 
-
-    /*
-        Fletching.
-    */
-
-    const featherX =
-        stringPoint.x -
-        dx * 7;
-
-    const featherY =
-        stringPoint.y -
-        dy * 7;
-
-
-    ctx.strokeStyle =
-        "#777";
-
+    // Fletching
+    const featherX = stringPoint.x - dx * 7;
+    const featherY = stringPoint.y - dy * 7;
+    ctx.strokeStyle = "#777";
     ctx.lineWidth = 1;
-
-
     ctx.beginPath();
-
-    ctx.moveTo(
-        featherX,
-        featherY
-    );
-
-    ctx.lineTo(
-        featherX -
-        dx * 12 +
-        px * 5,
-
-        featherY -
-        dy * 12 +
-        py * 5
-    );
-
-
-    ctx.moveTo(
-        featherX,
-        featherY
-    );
-
-    ctx.lineTo(
-        featherX -
-        dx * 12 -
-        px * 5,
-
-        featherY -
-        dy * 12 -
-        py * 5
-    );
-
+    ctx.moveTo(featherX, featherY);
+    ctx.lineTo(featherX - dx * 12 + px * 5, featherY - dy * 12 + py * 5);
+    ctx.moveTo(featherX, featherY);
+    ctx.lineTo(featherX - dx * 12 - px * 5, featherY - dy * 12 - py * 5);
     ctx.stroke();
 
-
-    /*
-        =====================================================
-        HANDLE
-        =====================================================
-    */
-
-    ctx.strokeStyle =
-        "#aaa";
-
+    // Handle
+    ctx.strokeStyle = "#aaa";
     ctx.lineWidth = 5;
-
     ctx.beginPath();
-
-    ctx.moveTo(
-        launcher.x -
-        px * 10,
-
-        launcher.y -
-        py * 10
-    );
-
-    ctx.lineTo(
-        launcher.x +
-        px * 10,
-
-        launcher.y +
-        py * 10
-    );
-
+    ctx.moveTo(launcher.x - px * 10, launcher.y - py * 10);
+    ctx.lineTo(launcher.x + px * 10, launcher.y + py * 10);
     ctx.stroke();
-
-
-    /*
-        =====================================================
-        MOBILE POWER INDICATOR
-        =====================================================
-    */
 
     if (touching) {
-
-        ctx.fillStyle =
-            aimActive
-                ? "rgba(255,255,255,.4)"
-                : "rgba(255,49,88,.7)";
-
-        ctx.font =
-            "9px monospace";
-
-
+        // Power indicator
+        ctx.fillStyle = aimActive ? "rgba(255,255,255,.4)" : "rgba(255,49,88,.7)";
+        ctx.font = "9px monospace";
         ctx.fillText(
-            aimActive
-                ? `POWER ${Math.round(eased * 100)}%`
-                : "AIM OUT OF RANGE",
+            aimActive ? `POWER ${Math.round(eased * 100)}%` : "AIM OUT OF RANGE",
             launcher.x - 45,
             launcher.y + 50
         );
-    }
 
-
-    /*
-        =====================================================
-        ACTIVE AIMING RADIUS
-        =====================================================
-
-        Drawn subtly while aiming so the player understands
-        the new mechanic.
-    */
-
-    if (touching) {
-
+        // Aiming radius
         ctx.beginPath();
-
-        ctx.arc(
-            launcher.x,
-            launcher.y,
-            AIM_ACTIVE_RADIUS,
-            0,
-            Math.PI * 2
-        );
-
-
-        ctx.setLineDash([
-            3,
-            7
-        ]);
-
-
-        ctx.strokeStyle =
-            aimActive
-                ? "rgba(0,255,145,.14)"
-                : "rgba(255,49,88,.28)";
-
-
+        ctx.arc(launcher.x, launcher.y, AIM_ACTIVE_RADIUS, 0, Math.PI * 2);
+        ctx.setLineDash([3, 7]);
+        ctx.strokeStyle = aimActive ? "rgba(0,255,145,.14)" : "rgba(255,49,88,.28)";
         ctx.lineWidth = 1;
-
         ctx.stroke();
-
         ctx.setLineDash([]);
-    }
 
+        // NEW: pull line from bow to finger, so the slingshot is visible
+        ctx.beginPath();
+        ctx.moveTo(launcher.x, launcher.y);
+        ctx.lineTo(currentTouchX, currentTouchY);
+        ctx.strokeStyle = aimActive ? "rgba(255,255,255,.12)" : "rgba(255,49,88,.2)";
+        ctx.stroke();
+    }
 
     ctx.restore();
 }
-
 
 /* =========================================================
-   TARGET
+   TARGET DRAW
 ========================================================= */
-
 function drawTarget() {
-
     targetFlash *= .92;
-
-
     ctx.save();
 
-
-    /*
-        Outer pulse.
-    */
-
-    ctx.strokeStyle =
-        `rgba(
-            0,
-            255,
-            145,
-            ${.12 + targetFlash * .4}
-        )`;
-
+    ctx.strokeStyle = `rgba(0,255,145,${.12 + targetFlash * .4})`;
     ctx.lineWidth = 1;
-
-
     ctx.beginPath();
-
-    ctx.arc(
-        target.x,
-        target.y,
-        target.radius +
-        16 +
-        targetFlash * 10,
-        0,
-        Math.PI * 2
-    );
-
+    ctx.arc(target.x, target.y, target.radius + 16 + targetFlash * 10, 0, Math.PI * 2);
     ctx.stroke();
 
-
-    /*
-        Secondary ring.
-    */
-
     ctx.beginPath();
-
-    ctx.arc(
-        target.x,
-        target.y,
-        target.radius + 5,
-        0,
-        Math.PI * 2
-    );
-
-    ctx.strokeStyle =
-        "rgba(255,255,255,.25)";
-
+    ctx.arc(target.x, target.y, target.radius + 5, 0, Math.PI * 2);
+    ctx.strokeStyle = "rgba(255,255,255,.25)";
     ctx.stroke();
 
-
-    /*
-        Target.
-    */
-
-    ctx.shadowColor =
-        "#00ff91";
-
-    ctx.shadowBlur =
-        18;
-
-
-    ctx.fillStyle =
-        "#fff";
-
-
+    ctx.shadowColor = "#00ff91";
+    ctx.shadowBlur = 18;
+    ctx.fillStyle = "#fff";
     ctx.beginPath();
-
-    ctx.arc(
-        target.x,
-        target.y,
-        target.radius,
-        0,
-        Math.PI * 2
-    );
-
+    ctx.arc(target.x, target.y, target.radius, 0, Math.PI * 2);
     ctx.fill();
-
-
     ctx.shadowBlur = 0;
 
-
-    /*
-        Crosshair.
-    */
-
-    ctx.strokeStyle =
-        "rgba(255,255,255,.18)";
-
-
+    ctx.strokeStyle = "rgba(255,255,255,.18)";
     ctx.beginPath();
-
-    ctx.moveTo(
-        target.x - 25,
-        target.y
-    );
-
-    ctx.lineTo(
-        target.x - 14,
-        target.y
-    );
-
-
-    ctx.moveTo(
-        target.x + 14,
-        target.y
-    );
-
-    ctx.lineTo(
-        target.x + 25,
-        target.y
-    );
-
-
-    ctx.moveTo(
-        target.x,
-        target.y - 25
-    );
-
-    ctx.lineTo(
-        target.x,
-        target.y - 14
-    );
-
-
-    ctx.moveTo(
-        target.x,
-        target.y + 14
-    );
-
-    ctx.lineTo(
-        target.x,
-        target.y + 25
-    );
-
-
+    ctx.moveTo(target.x - 25, target.y); ctx.lineTo(target.x - 14, target.y);
+    ctx.moveTo(target.x + 14, target.y); ctx.lineTo(target.x + 25, target.y);
+    ctx.moveTo(target.x, target.y - 25); ctx.lineTo(target.x, target.y - 14);
+    ctx.moveTo(target.x, target.y + 14); ctx.lineTo(target.x, target.y + 25);
     ctx.stroke();
-
 
     ctx.restore();
 }
-
 
 /* =========================================================
    SHOOT
 ========================================================= */
-
 function shoot() {
-
-    if (
-        arrow ||
-        locked
-    ) {
-
-        return;
-    }
-
-
+    if (arrow || locked) return;
     shots++;
 
-
-    /*
-        For mobile shots, use the LAST VALID values.
-
-        This is another safety layer preventing a pointer
-        position outside the radius from affecting the shot.
-    */
-
-    const theta =
-        touching
-            ? lastValidAngle
-            : Number(angleSlider.value);
-
-
-    const v =
-        touching
-            ? lastValidVelocity
-            : Number(velocitySlider.value);
-
-
-    const radians =
-        theta *
-        Math.PI /
-        180;
-
+    const theta = currentAngle();
+    const v = currentVelocity();
+    const radians = theta * Math.PI / 180;
 
     arrow = {
-
-        x:
-            launcher.x,
-
-        y:
-            launcher.y,
-
-        vx:
-            v *
-            Math.cos(radians),
-
-        vy:
-            -v *
-            Math.sin(radians),
-
+        x: launcher.x,
+        y: launcher.y,
+        vx: v * Math.cos(radians),
+        vy: -v * Math.sin(radians),
         time: 0,
-
         trail: []
     };
 
-
-    document
-        .getElementById("fire")
-        .textContent =
-        "ARROW IN FLIGHT";
-
-
+    document.getElementById("fire").textContent = "ARROW IN FLIGHT";
     updateStats();
 }
-
 
 /* =========================================================
    ARROW DRAW
 ========================================================= */
-
 function drawArrow() {
+    if (!arrow) return;
 
-    if (!arrow) {
-        return;
-    }
-
-
-    const a =
-        Math.atan2(
-            arrow.vy,
-            arrow.vx
-        );
-
-
-    const dx =
-        Math.cos(a);
-
-    const dy =
-        Math.sin(a);
-
-
-    const px =
-        -dy;
-
-    const py =
-        dx;
-
+    const a = Math.atan2(arrow.vy, arrow.vx);
+    const dx = Math.cos(a), dy = Math.sin(a);
+    const px = -dy, py = dx;
 
     ctx.save();
 
-
-    /*
-        Trail.
-    */
-
-    if (
-        arrow.trail.length > 1
-    ) {
-
+    if (arrow.trail.length > 1) {
         ctx.beginPath();
-
-        ctx.moveTo(
-            arrow.trail[0].x,
-            arrow.trail[0].y
-        );
-
-
-        for (
-            let i = 1;
-            i < arrow.trail.length;
-            i++
-        ) {
-
-            ctx.lineTo(
-                arrow.trail[i].x,
-                arrow.trail[i].y
-            );
-        }
-
-
-        ctx.strokeStyle =
-            "rgba(255,255,255,.18)";
-
+        ctx.moveTo(arrow.trail[0].x, arrow.trail[0].y);
+        for (let i = 1; i < arrow.trail.length; i++) ctx.lineTo(arrow.trail[i].x, arrow.trail[i].y);
+        ctx.strokeStyle = "rgba(255,255,255,.18)";
         ctx.lineWidth = 1;
-
         ctx.stroke();
     }
 
-
-    /*
-        Arrow glow.
-    */
-
-    ctx.shadowColor =
-        "rgba(255,255,255,.5)";
-
+    ctx.shadowColor = "rgba(255,255,255,.5)";
     ctx.shadowBlur = 7;
-
-
-    /*
-        Shaft.
-    */
-
-    ctx.strokeStyle =
-        "#fff";
-
+    ctx.strokeStyle = "#fff";
     ctx.lineWidth = 3;
-
-    ctx.lineCap =
-        "round";
-
-
+    ctx.lineCap = "round";
     ctx.beginPath();
-
-    ctx.moveTo(
-        arrow.x -
-        dx * 22,
-
-        arrow.y -
-        dy * 22
-    );
-
-    ctx.lineTo(
-        arrow.x +
-        dx * 17,
-
-        arrow.y +
-        dy * 17
-    );
-
+    ctx.moveTo(arrow.x - dx * 22, arrow.y - dy * 22);
+    ctx.lineTo(arrow.x + dx * 17, arrow.y + dy * 17);
     ctx.stroke();
-
     ctx.shadowBlur = 0;
 
-
-    /*
-        Head.
-    */
-
-    const tipX =
-        arrow.x +
-        dx * 24;
-
-    const tipY =
-        arrow.y +
-        dy * 24;
-
-
-    ctx.fillStyle =
-        "#fff";
-
-
+    const tipX = arrow.x + dx * 24, tipY = arrow.y + dy * 24;
+    ctx.fillStyle = "#fff";
     ctx.beginPath();
-
-    ctx.moveTo(
-        tipX,
-        tipY
-    );
-
-    ctx.lineTo(
-        tipX -
-        dx * 13 +
-        px * 5,
-
-        tipY -
-        dy * 13 +
-        py * 5
-    );
-
-    ctx.lineTo(
-        tipX -
-        dx * 13 -
-        px * 5,
-
-        tipY -
-        dy * 13 -
-        py * 5
-    );
-
+    ctx.moveTo(tipX, tipY);
+    ctx.lineTo(tipX - dx * 13 + px * 5, tipY - dy * 13 + py * 5);
+    ctx.lineTo(tipX - dx * 13 - px * 5, tipY - dy * 13 - py * 5);
     ctx.closePath();
-
     ctx.fill();
 
-
-    /*
-        Fletching.
-    */
-
-    const rearX =
-        arrow.x -
-        dx * 16;
-
-    const rearY =
-        arrow.y -
-        dy * 16;
-
-
-    ctx.strokeStyle =
-        "#999";
-
+    const rearX = arrow.x - dx * 16, rearY = arrow.y - dy * 16;
+    ctx.strokeStyle = "#999";
     ctx.lineWidth = 1;
-
-
     ctx.beginPath();
-
-    ctx.moveTo(
-        rearX,
-        rearY
-    );
-
-    ctx.lineTo(
-        rearX -
-        dx * 10 +
-        px * 6,
-
-        rearY -
-        dy * 10 +
-        py * 6
-    );
-
-
-    ctx.moveTo(
-        rearX,
-        rearY
-    );
-
-    ctx.lineTo(
-        rearX -
-        dx * 10 -
-        px * 6,
-
-        rearY -
-        dy * 10 -
-        py * 6
-    );
-
-
+    ctx.moveTo(rearX, rearY);
+    ctx.lineTo(rearX - dx * 10 + px * 6, rearY - dy * 10 + py * 6);
+    ctx.moveTo(rearX, rearY);
+    ctx.lineTo(rearX - dx * 10 - px * 6, rearY - dy * 10 - py * 6);
     ctx.stroke();
 
     ctx.restore();
 }
 
-
 /* =========================================================
-   COLLISION
+   COLLISION / HIT / MISS
 ========================================================= */
-
-function collision() {
-
-    const dx =
-        arrow.x -
-        target.x;
-
-    const dy =
-        arrow.y -
-        target.y;
-
-
-    const distance =
-        Math.sqrt(
-            dx * dx +
-            dy * dy
-        );
-
-
-    return (
-        distance <
-        target.radius + 10
-    );
+function targetDistance() {
+    const dx = arrow.x - target.x, dy = arrow.y - target.y;
+    return Math.sqrt(dx * dx + dy * dy);
 }
 
-
-/* =========================================================
-   HIT
-========================================================= */
+function collision() {
+    return targetDistance() < target.radius + 10;
+}
 
 function hit() {
-
     hits++;
-
     streak++;
 
-
-    const distance =
-        Math.sqrt(
-            Math.pow(
-                arrow.x -
-                target.x,
-                2
-            ) +
-            Math.pow(
-                arrow.y -
-                target.y,
-                2
-            )
-        );
-
-
-    const precisionBonus =
-        Math.max(
-            0,
-            Math.round(
-                (
-                    target.radius +
-                    10 -
-                    distance
-                ) * 8
-            )
-        );
-
-
-    const combo =
-        streak * 20;
-
-
-    const gained =
-        100 +
-        precisionBonus +
-        combo;
-
-
+    const precisionBonus = Math.max(0, Math.round((target.radius + 10 - targetDistance()) * 8));
+    const gained = 100 + precisionBonus + streak * 20;
     score += gained;
-
-
     updateStats();
 
-
-    explode(
-        target.x,
-        target.y
-    );
-
-
+    explode(target.x, target.y);
     targetFlash = 1;
-
-
-    showMessage(
-        "HIT",
-        `trajectory confirmed +${gained}`
-    );
-
+    showMessage("HIT", `trajectory confirmed +${gained}`);
 
     arrow = null;
-
-
-    document
-        .getElementById("fire")
-        .textContent =
-        "FIRE ARROW";
-
-
+    document.getElementById("fire").textContent = "FIRE ARROW";
     locked = true;
 
-
     setTimeout(() => {
-
         placeTarget();
-
         locked = false;
-
         hideMessage();
-
     }, 550);
 }
 
-
-/* =========================================================
-   MISS
-========================================================= */
-
 function miss() {
-
     streak = 0;
-
     updateStats();
-
-
-    showMessage(
-        "MISS",
-        "recalculate trajectory"
-    );
-
+    showMessage("MISS", "recalculate trajectory");
 
     arrow = null;
-
-
-    document
-        .getElementById("fire")
-        .textContent =
-        "FIRE ARROW";
-
-
+    document.getElementById("fire").textContent = "FIRE ARROW";
     locked = true;
 
-
     setTimeout(() => {
-
         locked = false;
-
         hideMessage();
-
     }, 500);
 }
-
 
 /* =========================================================
    ARROW PHYSICS
 ========================================================= */
-
 function updateArrow(dt) {
+    if (!arrow) return;
 
-    if (!arrow) {
-        return;
-    }
+    arrow.trail.push({ x: arrow.x, y: arrow.y });
+    if (arrow.trail.length > 32) arrow.trail.shift();
 
-
-    /*
-        Trail.
-    */
-
-    arrow.trail.push({
-
-        x:
-            arrow.x,
-
-        y:
-            arrow.y
-
-    });
-
-
-    if (
-        arrow.trail.length >
-        32
-    ) {
-
-        arrow.trail.shift();
-
-    }
-
-
-    /*
-        Projectile integration.
-    */
-
-    arrow.x +=
-        arrow.vx *
-        dt;
-
-
-    arrow.y +=
-        arrow.vy *
-        dt;
-
-
-    arrow.vy +=
-        GRAVITY *
-        dt;
-
-
+    arrow.x += arrow.vx * dt;
+    arrow.y += arrow.vy * dt;
+    arrow.vy += GRAVITY * dt;
     arrow.time += dt;
 
-
-    /*
-        Collision.
-    */
-
-    if (
-        collision()
-    ) {
-
-        hit();
-
-        return;
-    }
-
-
-    /*
-        Out of bounds.
-    */
-
-    if (
-        arrow.x >
-            W + 80 ||
-        arrow.y >
-            H + 80 ||
-        arrow.y <
-            65
-    ) {
-
-        miss();
-    }
+    if (collision()) { hit(); return; }
+    if (arrow.x > W + 80 || arrow.y > H + 80 || arrow.y < 65) miss();
 }
-
 
 /* =========================================================
    PARTICLES
 ========================================================= */
-
-function explode(x,y) {
-
-    for (
-        let i = 0;
-        i < 34;
-        i++
-    ) {
-
-        const a =
-            Math.random() *
-            Math.PI *
-            2;
-
-
-        const speed =
-            60 +
-            Math.random() *
-            240;
-
-
-        particles.push({
-
-            x,
-            y,
-
-            vx:
-                Math.cos(a) *
-                speed,
-
-            vy:
-                Math.sin(a) *
-                speed,
-
-            life: 1,
-
-            size:
-                1 +
-                Math.random() *
-                2.5
-        });
+function explode(x, y) {
+    for (let i = 0; i < 34; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const speed = 60 + Math.random() * 240;
+        particles.push({ x, y, vx: Math.cos(a) * speed, vy: Math.sin(a) * speed, life: 1, size: 1 + Math.random() * 2.5 });
     }
 }
-
 
 function updateParticles(dt) {
-
-    for (
-        let i =
-            particles.length - 1;
-        i >= 0;
-        i--
-    ) {
-
-        const p =
-            particles[i];
-
-
-        p.x +=
-            p.vx *
-            dt;
-
-
-        p.y +=
-            p.vy *
-            dt;
-
-
-        p.vy +=
-            130 *
-            dt;
-
-
-        p.life -=
-            dt *
-            1.8;
-
-
-        if (
-            p.life <= 0
-        ) {
-
-            particles.splice(
-                i,
-                1
-            );
-        }
+    for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.vy += 130 * dt;
+        p.life -= dt * 1.8;
+        if (p.life <= 0) particles.splice(i, 1);
     }
 }
-
 
 function drawParticles() {
-
-    for (
-        const p of particles
-    ) {
-
-        ctx.globalAlpha =
-            p.life;
-
-
-        ctx.fillStyle =
-            "#00ff91";
-
-
+    for (const p of particles) {
+        ctx.globalAlpha = p.life;
+        ctx.fillStyle = "#00ff91";
         ctx.beginPath();
-
-        ctx.arc(
-            p.x,
-            p.y,
-            p.size,
-            0,
-            Math.PI * 2
-        );
-
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
         ctx.fill();
     }
-
-
     ctx.globalAlpha = 1;
 }
-
 
 /* =========================================================
    HUD
 ========================================================= */
-
 function updateStats() {
-
-    document
-        .getElementById("score")
-        .textContent =
-        String(score)
-            .padStart(4,"0");
-
-
-    document
-        .getElementById("streak")
-        .textContent =
-        String(streak)
-            .padStart(2,"0");
-
-
-    document
-        .getElementById("accuracy")
-        .textContent =
-        shots === 0
-            ? "100%"
-            : Math.round(
-                hits /
-                shots *
-                100
-            ) + "%";
+    document.getElementById("score").textContent = String(score).padStart(4, "0");
+    document.getElementById("streak").textContent = String(streak).padStart(2, "0");
+    document.getElementById("accuracy").textContent =
+        shots === 0 ? "100%" : Math.round(hits / shots * 100) + "%";
 }
-
 
 /* =========================================================
    MESSAGE
 ========================================================= */
-
 let messageTimeout;
 
-
-function showMessage(
-    main,
-    sub
-) {
-
-    clearTimeout(
-        messageTimeout
-    );
-
-
-    const element =
-        document
-            .getElementById(
-                "message"
-            );
-
-
-    const mainElement =
-        document
-            .getElementById(
-                "messageMain"
-            );
-
-
-    const subElement =
-        document
-            .getElementById(
-                "messageSub"
-            );
-
-
-    mainElement.textContent =
-        main;
-
-    subElement.textContent =
-        sub;
-
-
-    mainElement.style.color =
-        main === "HIT"
-            ? "#00ff91"
-            : "#ff3158";
-
-
-    element.classList.add(
-        "show"
-    );
+function showMessage(main, sub) {
+    clearTimeout(messageTimeout);
+    const mainElement = document.getElementById("messageMain");
+    mainElement.textContent = main;
+    document.getElementById("messageSub").textContent = sub;
+    mainElement.style.color = main === "HIT" ? "#00ff91" : "#ff3158";
+    document.getElementById("message").classList.add("show");
 }
-
 
 function hideMessage() {
-
-    messageTimeout =
-        setTimeout(() => {
-
-            document
-                .getElementById(
-                    "message"
-                )
-                .classList.remove(
-                    "show"
-                );
-
-        },80);
+    messageTimeout = setTimeout(() => {
+        document.getElementById("message").classList.remove("show");
+    }, 80);
 }
 
-
 /* =========================================================
-   DRAW
+   DRAW + LOOP
 ========================================================= */
-
 function draw() {
+    ctx.clearRect(0, 0, W, H);
 
-    ctx.clearRect(
-        0,
-        0,
-        W,
-        H
-    );
-
-
-    /*
-        Launch baseline.
-    */
-
-    ctx.strokeStyle =
-        "#101010";
-
+    ctx.strokeStyle = "#101010";
     ctx.lineWidth = 1;
-
-
     ctx.beginPath();
-
-    ctx.moveTo(
-        0,
-        launcher.y
-    );
-
-    ctx.lineTo(
-        W,
-        launcher.y
-    );
-
+    ctx.moveTo(0, launcher.y);
+    ctx.lineTo(W, launcher.y);
     ctx.stroke();
 
-
-    /*
-        Coordinate label.
-    */
-
-    ctx.fillStyle =
-        "#292929";
-
-    ctx.font =
-        "9px monospace";
-
-
-    ctx.fillText(
-        "x₀",
-        launcher.x - 4,
-        launcher.y + 25
-    );
-
+    ctx.fillStyle = "#292929";
+    ctx.font = "9px monospace";
+    ctx.fillText("x₀", launcher.x - 4, launcher.y + 25);
 
     drawPrediction();
-
     drawTarget();
-
     drawBow();
-
     drawArrow();
-
     drawParticles();
 }
 
-
-/* =========================================================
-   LOOP
-========================================================= */
-
 function loop(now) {
-
-    let dt =
-        (now - lastTime) /
-        1000;
-
-
+    const dt = Math.min((now - lastTime) / 1000, .025);
     lastTime = now;
-
-
-    /*
-        Prevent physics jumps.
-    */
-
-    dt =
-        Math.min(
-            dt,
-            .025
-        );
-
-
     updateArrow(dt);
-
     updateParticles(dt);
-
     draw();
-
-
-    requestAnimationFrame(
-        loop
-    );
+    requestAnimationFrame(loop);
 }
 
-
 /* =========================================================
-   DESKTOP FIRE
+   DESKTOP FIRE + KEYBOARD
 ========================================================= */
+document.getElementById("fire").addEventListener("click", shoot);
 
-document
-    .getElementById("fire")
-    .addEventListener(
-        "click",
-        shoot
-    );
-
-
-/* =========================================================
-   KEYBOARD
-========================================================= */
-
-document.addEventListener(
-    "keydown",
-    e => {
-
-        if (
-            e.code === "Space" ||
-            e.code === "Enter"
-        ) {
-
-            e.preventDefault();
-
-            shoot();
-
-            return;
-        }
-
-
-        if (
-            e.code === "ArrowUp"
-        ) {
-
-            angleSlider.value =
-                Math.min(
-                    82,
-                    Number(
-                        angleSlider.value
-                    ) + 1
-                );
-
-            updateControls();
-        }
-
-
-        if (
-            e.code === "ArrowDown"
-        ) {
-
-            angleSlider.value =
-                Math.max(
-                    8,
-                    Number(
-                        angleSlider.value
-                    ) - 1
-                );
-
-            updateControls();
-        }
-
-
-        if (
-            e.code === "ArrowRight"
-        ) {
-
-            velocitySlider.value =
-                Math.min(
-                    MAX_VELOCITY,
-                    Number(
-                        velocitySlider.value
-                    ) + 25
-                );
-
-            updateControls();
-        }
-
-
-        if (
-            e.code === "ArrowLeft"
-        ) {
-
-            velocitySlider.value =
-                Math.max(
-                    MIN_VELOCITY,
-                    Number(
-                        velocitySlider.value
-                    ) - 25
-                );
-
-            updateControls();
-        }
-
+document.addEventListener("keydown", e => {
+    if (e.code === "Space" || e.code === "Enter") {
+        e.preventDefault();
+        shoot();
+        return;
     }
-);
-
+    if (e.code === "ArrowUp") angleSlider.value = Math.min(MAX_ANGLE, Number(angleSlider.value) + 1);
+    if (e.code === "ArrowDown") angleSlider.value = Math.max(MIN_ANGLE, Number(angleSlider.value) - 1);
+    if (e.code === "ArrowRight") velocitySlider.value = Math.min(MAX_VELOCITY, Number(velocitySlider.value) + 25);
+    if (e.code === "ArrowLeft") velocitySlider.value = Math.max(MIN_VELOCITY, Number(velocitySlider.value) - 25);
+    updateControls();
+});
 
 /* =========================================================
    START
 ========================================================= */
-
 updateControls();
-
 resize();
-
 updateStats();
-
-requestAnimationFrame(
-    loop
-);
-
+requestAnimationFrame(loop);
 </script>
-
 </body>
 </html>

@@ -149,15 +149,14 @@ const target = { x: 0, y: 0, baseY: 0, radius: 10, phase: 0 };
    NEW: DIFFICULTY LEVELS
    ---------------------------------------------------------
    radiusScale  : target size multiplier
-   previewTime  : seconds of flight shown by the dotted line
    moveAmp      : vertical target movement in px (0 = still)
    moveSpeed    : target movement speed
    multiplier   : score multiplier
 ========================================================= */
 const DIFFICULTY = {
-    easy:   { radiusScale: 1.5,  previewTime: 5,   moveAmp: 0,  moveSpeed: 0,   multiplier: 1 },
-    normal: { radiusScale: 1,    previewTime: .45, moveAmp: 0,  moveSpeed: 0,   multiplier: 2 },
-    hard:   { radiusScale: .75,  previewTime: .15, moveAmp: 45, moveSpeed: 1.6, multiplier: 3 }
+    easy:   { radiusScale: 1.5,  moveAmp: 0,  moveSpeed: 0,   multiplier: 1 },
+    normal: { radiusScale: 1,    moveAmp: 0,  moveSpeed: 0,   multiplier: 2 },
+    hard:   { radiusScale: .75,  moveAmp: 45, moveSpeed: 1.6, multiplier: 3 }
 };
 
 let level = "normal";
@@ -522,35 +521,6 @@ canvas.addEventListener("pointercancel", () => {
     touching = false;
     aimActive = false;
 });
-
-/* =========================================================
-   DRAW PREDICTION
-========================================================= */
-function drawPrediction() {
-    if (arrow) return;
-
-    const theta = currentAngle();
-    const velocity = currentVelocity();
-    const maxT = settings().previewTime; // CHANGED: length depends on level
-
-    ctx.save();
-    ctx.beginPath();
-    let started = false;
-
-    for (let t = 0; t < maxT; t += .025) {
-        const p = projectile(t, theta, velocity);
-        if (p.x > W + 30 || p.y > H + 30 || p.y < 70) break;
-        if (!started) { ctx.moveTo(p.x, p.y); started = true; }
-        else ctx.lineTo(p.x, p.y);
-    }
-
-    ctx.setLineDash([2, 7]);
-    if (touching && !aimActive) ctx.strokeStyle = "rgba(255,49,88,.15)";
-    else ctx.strokeStyle = touching ? "rgba(0,255,145,.38)" : "rgba(255,255,255,.18)";
-    ctx.lineWidth = 1;
-    ctx.stroke();
-    ctx.restore();
-}
 
 /* =========================================================
    BOW
@@ -958,7 +928,6 @@ function draw() {
     ctx.font = "9px monospace";
     ctx.fillText("x₀", launcher.x - 4, launcher.y + 25);
 
-    drawPrediction();
     drawTarget();
     drawBow();
     drawArrow();

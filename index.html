@@ -21,6 +21,16 @@ canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: 
 .stat-label { color: #444; font-size: 7px; letter-spacing: 1.5px; margin-bottom: 4px; text-transform: uppercase; }
 .stat-value { font-family: monospace; font-size: 13px; }
 
+/* NEW: difficulty + sound bar */
+.toolbar { position: absolute; z-index: 12; top: calc(80px + env(safe-area-inset-top)); left: 20px; right: 20px; display: flex; justify-content: space-between; align-items: center; pointer-events: none; }
+.levels { display: flex; border: 1px solid #202020; pointer-events: auto; }
+.level, .mute { background: transparent; color: #555; border: 0; font-family: monospace; font-size: 9px; letter-spacing: 2px; padding: 8px 12px; cursor: pointer; text-transform: uppercase; }
+.level + .level { border-left: 1px solid #202020; }
+.level.active { color: #000; background: #fff; }
+.level:disabled { cursor: not-allowed; opacity: .5; }
+.mute { border: 1px solid #202020; pointer-events: auto; min-width: 74px; }
+.mute.on { color: #00ff91; }
+
 /* Desktop control panel */
 .controls { position: absolute; z-index: 10; left: 25px; bottom: 25px; width: 255px; padding: 18px; background: rgba(0,0,0,.9); border: 1px solid #202020; }
 .title { color: #555; font-size: 8px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 17px; }
@@ -35,7 +45,7 @@ input[type="range"]::-moz-range-thumb { width: 13px; height: 13px; border: 0; bo
 .fire:active { transform: scale(.97); }
 
 /* Mobile instructions */
-.mobile-hint { position: absolute; z-index: 6; left: 50%; top: 92px; transform: translateX(-50%); width: 90%; text-align: center; color: #444; font-family: monospace; font-size: 8px; letter-spacing: 1px; line-height: 1.8; pointer-events: none; transition: opacity .4s; }
+.mobile-hint { position: absolute; z-index: 6; left: 50%; top: calc(125px + env(safe-area-inset-top)); transform: translateX(-50%); width: 90%; text-align: center; color: #444; font-family: monospace; font-size: 8px; letter-spacing: 1px; line-height: 1.8; pointer-events: none; transition: opacity .4s; }
 .mobile-hint.hidden { opacity: 0; }
 
 /* Message */
@@ -53,8 +63,10 @@ input[type="range"]::-moz-range-thumb { width: 13px; height: 13px; border: 0; bo
     .stats { gap: 10px; }
     .stat-label { font-size: 6px; }
     .stat-value { font-size: 11px; }
+    .toolbar { top: calc(72px + env(safe-area-inset-top)); left: 15px; right: 15px; }
+    .level, .mute { padding: 8px 10px; letter-spacing: 1px; }
     .controls, .equation { display: none; }
-    .mobile-hint { display: block; }
+    .mobile-hint { display: block; top: calc(115px + env(safe-area-inset-top)); }
 }
 @media (min-width: 701px) {
     .mobile-hint { display: none; }
@@ -77,7 +89,16 @@ input[type="range"]::-moz-range-thumb { width: 13px; height: 13px; border: 0; bo
         </div>
     </div>
 
-    <!-- CHANGED: hint now describes the slingshot-style pull -->
+    <!-- NEW: difficulty selector and sound toggle -->
+    <div class="toolbar">
+        <div class="levels" id="levels">
+            <button class="level" data-level="easy">Easy</button>
+            <button class="level" data-level="normal">Normal</button>
+            <button class="level" data-level="hard">Hard</button>
+        </div>
+        <button class="mute on" id="mute">♪ ON</button>
+    </div>
+
     <div class="mobile-hint" id="mobileHint">
         TOUCH THE BOW AND PULL BACK<br>
         PULL FURTHER FOR MORE POWER · ARROW FLIES OPPOSITE YOUR PULL<br>
@@ -122,7 +143,32 @@ const MIN_ANGLE = 8;
 const MAX_ANGLE = 82;
 
 const launcher = { x: 110, y: 0 };
-const target = { x: 0, y: 0, radius: 10 };
+const target = { x: 0, y: 0, baseY: 0, radius: 10, phase: 0 };
+
+/* =========================================================
+   NEW: DIFFICULTY LEVELS
+   ---------------------------------------------------------
+   radiusScale  : target size multiplier
+   previewTime  : seconds of flight shown by the dotted line
+   moveAmp      : vertical target movement in px (0 = still)
+   moveSpeed    : target movement speed
+   multiplier   : score multiplier
+========================================================= */
+const DIFFICULTY = {
+    easy:   { radiusScale: 1.5,  previewTime: 5,   moveAmp: 0,  moveSpeed: 0,   multiplier: 1 },
+    normal: { radiusScale: 1,    previewTime: .45, moveAmp: 0,  moveSpeed: 0,   multiplier: 2 },
+    hard:   { radiusScale: .75,  previewTime: .15, moveAmp: 45, moveSpeed: 1.6, multiplier: 3 }
+};
+
+let level = "normal";
+try {
+    const saved = localStorage.getItem("trajectory-level");
+    if (saved && DIFFICULTY[saved]) level = saved;
+} catch (e) {}
+
+function settings() {
+    return DIFFICULTY[level];
+}
 
 /* =========================================================
    GAME STATE
@@ -133,6 +179,7 @@ let particles = [];
 let targetFlash = 0;
 let locked = false;
 let lastTime = performance.now();
+let clock = 0;
 
 /* =========================================================
    MOBILE DRAG STATE
@@ -141,23 +188,106 @@ let touching = false;
 let currentTouchX = 0;
 let currentTouchY = 0;
 
-/*
-    CHANGED: the aiming radius and the full-power draw distance
-    are now the same value. Reaching the edge of the circle
-    gives exactly 100% power, so every target is reachable.
-*/
 const AIM_ACTIVE_RADIUS = 135;
 const MAX_DRAW_DISTANCE = AIM_ACTIVE_RADIUS;
-
-/*
-    NEW: tiny pulls right on top of the bow give a jittery
-    direction, so the angle is held steady inside this zone.
-*/
 const AIM_DEAD_ZONE = 14;
 
 let aimActive = false;
 let lastValidAngle = 45;
 let lastValidVelocity = 850;
+let lastPowerStep = -1;
+
+/* =========================================================
+   NEW: SOUND (Web Audio, no files)
+   ---------------------------------------------------------
+   Every sound is a few oscillator notes or one tiny noise
+   burst. The audio context starts on the first tap or key,
+   as browsers require.
+========================================================= */
+let audio = null;
+let noiseBuffer = null;
+let soundOn = true;
+try {
+    soundOn = localStorage.getItem("trajectory-sound") !== "off";
+} catch (e) {}
+
+function unlockAudio() {
+    if (!soundOn) return;
+    if (!audio) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        audio = new AC();
+
+        // 0.25 s of white noise, reused for the whoosh
+        noiseBuffer = audio.createBuffer(1, audio.sampleRate * .25, audio.sampleRate);
+        const data = noiseBuffer.getChannelData(0);
+        for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+    }
+    if (audio.state === "suspended") audio.resume();
+}
+["pointerdown", "touchend", "keydown", "click"].forEach(type =>
+    window.addEventListener(type, unlockAudio, { passive: true })
+);
+
+/* One short note with a pitch slide and quick fade. */
+function tone(type, fromHz, toHz, duration, volume, delay = 0) {
+    if (!soundOn || !audio || audio.state !== "running") return;
+    const t = audio.currentTime + delay;
+    const osc = audio.createOscillator();
+    const gain = audio.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(fromHz, t);
+    osc.frequency.exponentialRampToValueAtTime(toHz, t + duration);
+    gain.gain.setValueAtTime(volume, t);
+    gain.gain.exponentialRampToValueAtTime(.0001, t + duration);
+    osc.connect(gain).connect(audio.destination);
+    osc.start(t);
+    osc.stop(t + duration + .02);
+}
+
+const sfx = {
+    // soft tick as the string passes each 10% of power
+    tick(step) { tone("sine", 500 + step * 70, 480 + step * 70, .03, .04); },
+
+    // bowstring twang on release, brighter with more power
+    twang(power) {
+        tone("triangle", 220 + power * 120, 90, .18, .22);
+        sfx.whoosh();
+    },
+
+    // quiet air swish
+    whoosh() {
+        if (!soundOn || !audio || audio.state !== "running") return;
+        const t = audio.currentTime;
+        const src = audio.createBufferSource();
+        const filter = audio.createBiquadFilter();
+        const gain = audio.createGain();
+        src.buffer = noiseBuffer;
+        filter.type = "bandpass";
+        filter.frequency.setValueAtTime(1800, t);
+        filter.frequency.exponentialRampToValueAtTime(500, t + .25);
+        gain.gain.setValueAtTime(.08, t);
+        gain.gain.exponentialRampToValueAtTime(.0001, t + .25);
+        src.connect(filter).connect(gain).connect(audio.destination);
+        src.start(t);
+    },
+
+    // two-note chime; pitch rises with the streak
+    hit(streakCount) {
+        const lift = Math.pow(1.06, Math.min(streakCount, 8));
+        tone("sine", 880 * lift, 870 * lift, .12, .18);
+        tone("sine", 1320 * lift, 1310 * lift, .2, .14, .07);
+    },
+
+    // low falling thud
+    miss() { tone("sine", 160, 60, .25, .25); },
+
+    // short buzz for an invalid release
+    denied() { tone("square", 110, 100, .09, .05); },
+
+    // UI click
+    click() { tone("sine", 1000, 900, .04, .06); }
+};
 
 /* =========================================================
    RESIZE
@@ -174,11 +304,6 @@ function resize() {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     if (W < 700) {
-        /*
-            CHANGED: pulling back means the finger moves left
-            and down from the bow. The bow now sits far enough
-            from the left and bottom edges for a full-power pull.
-        */
         launcher.x = Math.max(AIM_ACTIVE_RADIUS + 15, W * .22);
         launcher.y = H - (AIM_ACTIVE_RADIUS + 15);
     } else {
@@ -194,19 +319,76 @@ window.addEventListener("resize", resize);
    TARGET
 ========================================================= */
 function placeTarget() {
+    const s = settings();
+
     let minX;
-    if (W < 700) {
-        // CHANGED: keep targets clear of the relocated bow
-        minX = Math.max(W * .52, launcher.x + 90);
-    } else {
-        minX = Math.max(350, W * .38);
-    }
+    if (W < 700) minX = Math.max(W * .52, launcher.x + 90);
+    else minX = Math.max(350, W * .38);
     const maxX = Math.max(minX + 20, W - 45);
 
     target.x = minX + Math.random() * (maxX - minX);
-    target.y = 105 + Math.random() * Math.max(35, H - 265);
-    target.radius = W < 700 ? 11 : 9;
+
+    // CHANGED: leave room for vertical movement on hard
+    const topY = 140 + s.moveAmp;
+    const range = Math.max(35, H - 300 - s.moveAmp * 2);
+    target.baseY = topY + Math.random() * range;
+    target.y = target.baseY;
+    target.phase = Math.random() * Math.PI * 2;
+
+    target.radius = (W < 700 ? 11 : 9) * s.radiusScale;
 }
+
+/* NEW: moves the target on hard */
+function updateTarget() {
+    const s = settings();
+    target.y = target.baseY + Math.sin(clock * s.moveSpeed + target.phase) * s.moveAmp;
+}
+
+/* =========================================================
+   NEW: DIFFICULTY + SOUND BUTTONS
+========================================================= */
+const levelButtons = document.querySelectorAll(".level");
+const muteButton = document.getElementById("mute");
+
+function refreshToolbar() {
+    levelButtons.forEach(b => {
+        b.classList.toggle("active", b.dataset.level === level);
+        b.disabled = !!arrow;
+    });
+    muteButton.textContent = soundOn ? "♪ ON" : "♪ OFF";
+    muteButton.classList.toggle("on", soundOn);
+}
+
+function setLevel(next) {
+    if (arrow || next === level) return;
+    level = next;
+    try { localStorage.setItem("trajectory-level", level); } catch (e) {}
+
+    // a new level starts a fresh run
+    score = 0; streak = 0; shots = 0; hits = 0;
+    updateStats();
+    placeTarget();
+    refreshToolbar();
+    sfx.click();
+    showMessage(level.toUpperCase(), `score multiplier ×${settings().multiplier}`);
+    setTimeout(hideMessage, 700);
+}
+
+levelButtons.forEach(b => b.addEventListener("click", () => {
+    setLevel(b.dataset.level);
+    b.blur(); // keep Space for firing
+}));
+
+function toggleSound() {
+    soundOn = !soundOn;
+    try { localStorage.setItem("trajectory-sound", soundOn ? "on" : "off"); } catch (e) {}
+    if (soundOn) { unlockAudio(); sfx.click(); }
+    refreshToolbar();
+}
+muteButton.addEventListener("click", () => {
+    toggleSound();
+    muteButton.blur();
+});
 
 /* =========================================================
    DESKTOP CONTROLS
@@ -216,16 +398,6 @@ const velocitySlider = document.getElementById("velocity");
 const angleValue = document.getElementById("angleValue");
 const velocityValue = document.getElementById("velocityValue");
 
-function updateControls() {
-    const theta = touching ? lastValidAngle : Number(angleSlider.value);
-    const v = touching ? lastValidVelocity : Number(velocitySlider.value);
-    angleValue.textContent = theta.toFixed(1) + "°";
-    velocityValue.textContent = v.toFixed(0);
-}
-angleSlider.addEventListener("input", updateControls);
-velocitySlider.addEventListener("input", updateControls);
-
-/* Current aim, from touch (exact values) or sliders. */
 function currentAngle() {
     return touching ? lastValidAngle : Number(angleSlider.value);
 }
@@ -233,21 +405,30 @@ function currentVelocity() {
     return touching ? lastValidVelocity : Number(velocitySlider.value);
 }
 
+function updateControls() {
+    angleValue.textContent = currentAngle().toFixed(1) + "°";
+    velocityValue.textContent = currentVelocity().toFixed(0);
+}
+angleSlider.addEventListener("input", updateControls);
+velocitySlider.addEventListener("input", updateControls);
+
 /* =========================================================
    MATHEMATICS
 ========================================================= */
 function projectile(t, theta, velocity) {
     const radians = theta * Math.PI / 180;
-    const vx = velocity * Math.cos(radians);
-    const vy = velocity * Math.sin(radians);
     return {
-        x: launcher.x + vx * t,
-        y: launcher.y - vy * t + .5 * GRAVITY * t * t
+        x: launcher.x + velocity * Math.cos(radians) * t,
+        y: launcher.y - velocity * Math.sin(radians) * t + .5 * GRAVITY * t * t
     };
 }
 
 function smoothstep(n) {
     return n * n * (3 - 2 * n);
+}
+
+function powerOf(velocity) {
+    return smoothstep(Math.max(0, Math.min(1, (velocity - MIN_VELOCITY) / (MAX_VELOCITY - MIN_VELOCITY))));
 }
 
 /* =========================================================
@@ -264,20 +445,21 @@ function updateMobileAim(x, y) {
     }
     aimActive = true;
 
-    /*
-        CHANGED: slingshot aiming.
-        The arrow flies OPPOSITE to the pull. We measure the
-        vector from the finger back to the bow, so pulling
-        down-left aims up-right.
-    */
+    // slingshot: arrow flies opposite to the pull
     if (distance >= AIM_DEAD_ZONE) {
         let theta = Math.atan2(y - launcher.y, launcher.x - x) * 180 / Math.PI;
-        theta = Math.max(MIN_ANGLE, Math.min(MAX_ANGLE, theta));
-        lastValidAngle = theta;
+        lastValidAngle = Math.max(MIN_ANGLE, Math.min(MAX_ANGLE, theta));
     }
 
     const normalized = Math.max(0, Math.min(1, distance / MAX_DRAW_DISTANCE));
     lastValidVelocity = MIN_VELOCITY + smoothstep(normalized) * (MAX_VELOCITY - MIN_VELOCITY);
+
+    // NEW: tick each time power crosses a 10% step
+    const step = Math.floor(powerOf(lastValidVelocity) * 10);
+    if (step !== lastPowerStep) {
+        if (lastPowerStep !== -1) sfx.tick(step);
+        lastPowerStep = step;
+    }
 
     angleSlider.value = lastValidAngle;
     velocitySlider.value = lastValidVelocity;
@@ -285,7 +467,7 @@ function updateMobileAim(x, y) {
 }
 
 /* =========================================================
-   TOUCH START
+   TOUCH INPUT
 ========================================================= */
 canvas.addEventListener("pointerdown", e => {
     if (e.pointerType !== "touch" && e.pointerType !== "pen") return;
@@ -298,6 +480,7 @@ canvas.addEventListener("pointerdown", e => {
 
     touching = true;
     aimActive = true;
+    lastPowerStep = -1;
     currentTouchX = e.clientX;
     currentTouchY = e.clientY;
 
@@ -306,9 +489,6 @@ canvas.addEventListener("pointerdown", e => {
     document.getElementById("mobileHint").classList.add("hidden");
 }, { passive: false });
 
-/* =========================================================
-   TOUCH MOVE
-========================================================= */
 canvas.addEventListener("pointermove", e => {
     if (!touching) return;
     e.preventDefault();
@@ -317,9 +497,6 @@ canvas.addEventListener("pointermove", e => {
     updateMobileAim(currentTouchX, currentTouchY);
 }, { passive: false });
 
-/* =========================================================
-   TOUCH RELEASE
-========================================================= */
 canvas.addEventListener("pointerup", e => {
     if (!touching) return;
     e.preventDefault();
@@ -329,16 +506,12 @@ canvas.addEventListener("pointerup", e => {
         angleSlider.value = lastValidAngle;
         velocitySlider.value = lastValidVelocity;
         updateControls();
+        sfx.denied();
         showMessage("OUT OF RANGE", "return inside aiming radius");
         setTimeout(hideMessage, 350);
         return;
     }
 
-    /*
-        CHANGED: fire BEFORE clearing `touching`, so the shot
-        uses the exact last valid values instead of the
-        slider's rounded ones.
-    */
     shoot();
     touching = false;
     aimActive = false;
@@ -358,12 +531,13 @@ function drawPrediction() {
 
     const theta = currentAngle();
     const velocity = currentVelocity();
+    const maxT = settings().previewTime; // CHANGED: length depends on level
 
     ctx.save();
     ctx.beginPath();
     let started = false;
 
-    for (let t = 0; t < 5; t += .025) {
+    for (let t = 0; t < maxT; t += .025) {
         const p = projectile(t, theta, velocity);
         if (p.x > W + 30 || p.y > H + 30 || p.y < 70) break;
         if (!started) { ctx.moveTo(p.x, p.y); started = true; }
@@ -386,9 +560,7 @@ function drawBow() {
 
     const out = touching && !aimActive;
     const theta = currentAngle() * Math.PI / 180;
-    const velocity = currentVelocity();
-    const tension = Math.max(0, Math.min(1, (velocity - MIN_VELOCITY) / (MAX_VELOCITY - MIN_VELOCITY)));
-    const eased = smoothstep(tension);
+    const eased = powerOf(currentVelocity());
 
     const dx = Math.cos(theta);
     const dy = -Math.sin(theta);
@@ -400,11 +572,6 @@ function drawBow() {
 
     const top = { x: launcher.x + px * bowLength, y: launcher.y + py * bowLength };
     const bottom = { x: launcher.x - px * bowLength, y: launcher.y - py * bowLength };
-
-    /*
-        CHANGED: string pull always follows the power value,
-        so the visual matches the shot on mobile and desktop.
-    */
     const pull = 4 + eased * 42;
 
     const stringPoint = { x: launcher.x - dx * pull, y: launcher.y - dy * pull };
@@ -493,7 +660,6 @@ function drawBow() {
     ctx.stroke();
 
     if (touching) {
-        // Power indicator
         ctx.fillStyle = aimActive ? "rgba(255,255,255,.4)" : "rgba(255,49,88,.7)";
         ctx.font = "9px monospace";
         ctx.fillText(
@@ -502,7 +668,6 @@ function drawBow() {
             launcher.y + 50
         );
 
-        // Aiming radius
         ctx.beginPath();
         ctx.arc(launcher.x, launcher.y, AIM_ACTIVE_RADIUS, 0, Math.PI * 2);
         ctx.setLineDash([3, 7]);
@@ -511,7 +676,6 @@ function drawBow() {
         ctx.stroke();
         ctx.setLineDash([]);
 
-        // NEW: pull line from bow to finger, so the slingshot is visible
         ctx.beginPath();
         ctx.moveTo(launcher.x, launcher.y);
         ctx.lineTo(currentTouchX, currentTouchY);
@@ -548,12 +712,13 @@ function drawTarget() {
     ctx.fill();
     ctx.shadowBlur = 0;
 
+    const r = target.radius;
     ctx.strokeStyle = "rgba(255,255,255,.18)";
     ctx.beginPath();
-    ctx.moveTo(target.x - 25, target.y); ctx.lineTo(target.x - 14, target.y);
-    ctx.moveTo(target.x + 14, target.y); ctx.lineTo(target.x + 25, target.y);
-    ctx.moveTo(target.x, target.y - 25); ctx.lineTo(target.x, target.y - 14);
-    ctx.moveTo(target.x, target.y + 14); ctx.lineTo(target.x, target.y + 25);
+    ctx.moveTo(target.x - r - 16, target.y); ctx.lineTo(target.x - r - 5, target.y);
+    ctx.moveTo(target.x + r + 5, target.y); ctx.lineTo(target.x + r + 16, target.y);
+    ctx.moveTo(target.x, target.y - r - 16); ctx.lineTo(target.x, target.y - r - 5);
+    ctx.moveTo(target.x, target.y + r + 5); ctx.lineTo(target.x, target.y + r + 16);
     ctx.stroke();
 
     ctx.restore();
@@ -579,8 +744,10 @@ function shoot() {
         trail: []
     };
 
+    sfx.twang(powerOf(v));
     document.getElementById("fire").textContent = "ARROW IN FLIGHT";
     updateStats();
+    refreshToolbar();
 }
 
 /* =========================================================
@@ -654,16 +821,19 @@ function hit() {
     streak++;
 
     const precisionBonus = Math.max(0, Math.round((target.radius + 10 - targetDistance()) * 8));
-    const gained = 100 + precisionBonus + streak * 20;
+    // CHANGED: level multiplier applied
+    const gained = (100 + precisionBonus + streak * 20) * settings().multiplier;
     score += gained;
     updateStats();
 
     explode(target.x, target.y);
     targetFlash = 1;
+    sfx.hit(streak);
     showMessage("HIT", `trajectory confirmed +${gained}`);
 
     arrow = null;
     document.getElementById("fire").textContent = "FIRE ARROW";
+    refreshToolbar();
     locked = true;
 
     setTimeout(() => {
@@ -676,10 +846,12 @@ function hit() {
 function miss() {
     streak = 0;
     updateStats();
+    sfx.miss();
     showMessage("MISS", "recalculate trajectory");
 
     arrow = null;
     document.getElementById("fire").textContent = "FIRE ARROW";
+    refreshToolbar();
     locked = true;
 
     setTimeout(() => {
@@ -759,7 +931,7 @@ function showMessage(main, sub) {
     const mainElement = document.getElementById("messageMain");
     mainElement.textContent = main;
     document.getElementById("messageSub").textContent = sub;
-    mainElement.style.color = main === "HIT" ? "#00ff91" : "#ff3158";
+    mainElement.style.color = main === "HIT" ? "#00ff91" : main === "MISS" || main === "OUT OF RANGE" ? "#ff3158" : "#fff";
     document.getElementById("message").classList.add("show");
 }
 
@@ -796,6 +968,8 @@ function draw() {
 function loop(now) {
     const dt = Math.min((now - lastTime) / 1000, .025);
     lastTime = now;
+    clock += dt;
+    updateTarget();
     updateArrow(dt);
     updateParticles(dt);
     draw();
@@ -813,6 +987,13 @@ document.addEventListener("keydown", e => {
         shoot();
         return;
     }
+
+    // NEW: 1 / 2 / 3 pick a level, M toggles sound
+    if (e.code === "Digit1") setLevel("easy");
+    if (e.code === "Digit2") setLevel("normal");
+    if (e.code === "Digit3") setLevel("hard");
+    if (e.code === "KeyM") toggleSound();
+
     if (e.code === "ArrowUp") angleSlider.value = Math.min(MAX_ANGLE, Number(angleSlider.value) + 1);
     if (e.code === "ArrowDown") angleSlider.value = Math.max(MIN_ANGLE, Number(angleSlider.value) - 1);
     if (e.code === "ArrowRight") velocitySlider.value = Math.min(MAX_VELOCITY, Number(velocitySlider.value) + 25);
@@ -826,6 +1007,7 @@ document.addEventListener("keydown", e => {
 updateControls();
 resize();
 updateStats();
+refreshToolbar();
 requestAnimationFrame(loop);
 </script>
 </body>

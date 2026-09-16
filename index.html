@@ -637,20 +637,6 @@ function drawBow() {
             launcher.x - 45,
             launcher.y + 50
         );
-
-        ctx.beginPath();
-        ctx.arc(launcher.x, launcher.y, AIM_ACTIVE_RADIUS, 0, Math.PI * 2);
-        ctx.setLineDash([3, 7]);
-        ctx.strokeStyle = aimActive ? "rgba(0,255,145,.14)" : "rgba(255,49,88,.28)";
-        ctx.lineWidth = 1;
-        ctx.stroke();
-        ctx.setLineDash([]);
-
-        ctx.beginPath();
-        ctx.moveTo(launcher.x, launcher.y);
-        ctx.lineTo(currentTouchX, currentTouchY);
-        ctx.strokeStyle = aimActive ? "rgba(255,255,255,.12)" : "rgba(255,49,88,.2)";
-        ctx.stroke();
     }
 
     ctx.restore();
